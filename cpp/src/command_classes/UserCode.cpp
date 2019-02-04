@@ -317,11 +317,34 @@ bool UserCode::SetValue
 		msg->Append( GetCommandClassId() );
 		msg->Append( UserCodeCmd_Set );
 		msg->Append( value->GetID().GetIndex() );
-		msg->Append( UserCode_Occupied );
-		for( uint8 i = 0; i < len; i++ )
+
+		// if all digits are zeroes, clear the code
+		bool allZeroes = true;
+		for (uint8 i = 0; i < len; i++)
 		{
-			msg->Append( s[i] );
+			if (s[i] != 0) {
+				allZeroes = false;
+				break;
+			}
 		}
+		if (allZeroes)
+		{
+			// The spec says to clear a code slot, set it as available and send four NULLs as user code.
+			msg->Append( UserCode_Available );
+			for (uint8 i = 0; i < 4; i++)
+			{
+				msg->Append( 0 );
+			}
+		}
+		else
+		{
+			msg->Append( UserCode_Occupied );
+			for ( uint8 i = 0; i < len; i++ )
+			{
+				msg->Append( s[i] );
+			}
+		}
+
 		msg->Append( GetDriver()->GetTransmitOptions() );
 		GetDriver()->SendMsg( msg, Driver::MsgQueue_Send );
 		return true;
